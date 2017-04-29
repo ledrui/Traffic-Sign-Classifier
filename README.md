@@ -1,86 +1,54 @@
+## Project: Build a Traffic Sign Recognition Program
+[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
+Overview
+---
+In this project, you will use what you've learned about deep neural networks and convolutional neural networks to classify traffic signs. You will train and validate a model so it can classify traffic sign images using the [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset). After the model is trained, you will then try out your model on images of German traffic signs that you find on the web.
 
-# Traffic signs classification with a convolutional network
+We have included an Ipython notebook that contains further instructions 
+and starter code. Be sure to download the [Ipython notebook](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb). 
 
-This is my attempt to tackle traffic signs classification problem with a convolutional neural network implemented in TensorFlow (reaching **99.33% accuracy**). The highlights of this solution would be data preprocessing, data augmentation, pre-training and skipping connections in the network. You can read [the full post here](http://navoshta.com/traffic-signs-classification/).
+We also want you to create a detailed writeup of the project. Check out the [writeup template](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup. The writeup can be either a markdown file or a pdf document.
 
-Classification of German traffic signs is one of the assignments in Udacity Self-Driving Car Nanodegree program, however the dataset is publicly [available here](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset).
+To meet specifications, the project will require submitting three files: 
+* the Ipython notebook with the code
+* the code exported as an html file
+* a writeup report either as a markdown or pdf file 
 
-## Dataset
+Creating a Great Writeup
+---
+A great writeup should include the [rubric points](https://review.udacity.com/#!/rubrics/481/view) as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-The [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset) consists of **39,209 32×32 px color images** that we are supposed to use for training, and **12,630 images** that we will use for testing. Each image is a photo of a traffic sign belonging to one of 43 classes, e.g. traffic sign types.
+All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
 
-Each image is a 32×32×3 array of pixel intensities, represented as `[0, 255]` integer values in RGB color space. Class of each image is encoded as an integer in a 0 to 42 range. Dataset is very unbalanced, and some classes are represented way better than the others. The images also differ significantly in terms of contrast and brightness, so we will need to apply some kind of histogram equalization, this should noticeably improve feature extraction.
+You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
 
-## Preprocessing
+The Project
+---
+The goals / steps of this project are the following:
+* Load the data set
+* Explore, summarize and visualize the data set
+* Design, train and test a model architecture
+* Use the model to make predictions on new images
+* Analyze the softmax probabilities of the new images
+* Summarize the results with a written report
 
-The usual preprocessing in this case would include scaling of pixel values to `[0, 1]` (as currently they are in `[0, 255]` range), representing labels in a one-hot encoding and shuffling. Looking at the images, histogram equalization may be helpful as well. We will apply _localized_ histogram equalization, as it seems to improve feature extraction even further in our case. 
+### Dependencies
+This lab requires:
 
-I will only use a single channel in my model, e.g. grayscale images instead of color ones. As Pierre Sermanet and Yann LeCun mentioned in [their paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf), using color channels didn't seem to improve things a lot, so I will only take `Y` channel of the `YCbCr` representation of an image.
+* [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit)
 
-## Augmentation
+The lab environment can be created with CarND Term1 Starter Kit. Click [here](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) for the details.
 
-The amount of data we have is not sufficient for a model to generalise well. It is also fairly unbalanced, and some classes are represented to significantly lower extent than the others. But we will fix this with data augmentation!
+### Dataset and Repository
 
-### Flipping
-
-First, we are going to apply a couple of tricks to extend our data by _flipping_. You might have noticed that some traffic signs are invariant to horizontal and/or vertical flipping, which basically means that we can flip an image and it should still be classified as belonging to the same class. Some signs can be flipped either way — like **Priority Road** or **No Entry** signs, other signs are *180° rotation invariant*, and to rotate them 180° we will simply first flip them horizontally, and then vertically. Finally there are signs that can be flipped, and should then be classified as a sign of some other class. This is still useful, as we can use data of these classes to extend their counterparts. We are going to use this during augmentation, and this simple trick lets us extend original **39,209** training examples to **63,538**, nice! And it cost us nothing in terms of data collection or computational resources. 
-
-### Rotation and projection
-
-However, it is still not enough, and we need to augment even further. After experimenting with adding random *rotation*, *projection*, *blur*, *noize* and *gamma adjusting*, I have used *rotation* and *projection* transformations in the pipeline. Projection transform seems to also take care of random shearing and scaling as we randomly position image corners in a `[±delta, ±delta]` range.
-
-## Model 
-
-### Architecture
-
-I decided to use a deep neural network classifier as a model, which was inspired by [Daniel Nouri's tutorial](http://navoshta.com/facial-with-tensorflow/) and aforementioned [Pierre Sermanet / Yann LeCun paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf). It is fairly simple and has 4 layers: **3 convolutional layers** for feature extraction and **one fully connected layer** as a classifier.
-
-<p align="center">
-  <img src="model_architecture.png" alt="Model architecture"/>
-</p>
-
-As opposed to usual strict feed-forward CNNs I use **multi-scale features**, which means that convolutional layers' output is not only forwarded into subsequent layer, but is also branched off and fed into classifier (e.g. fully connected layer). Please mind that these branched off layers undergo additional max-pooling, so that all convolutions are proportionally subsampled before going into classifier.
-
-### Regularization
-
-I use the following regularization techniques to minimize overfitting to training data:
-
-* **Dropout**. Dropout is amazing and will drastically improve generalization of your model. Normally you may only want to apply dropout to fully connected layers, as shared weights in convolutional layers are good regularizers themselves. However, I did notice a slight improvement in performance when using a bit of dropout on convolutional layers, thus left it in, but kept it at minimum:
-
-```
-                Type           Size         keep_p      Dropout
- Layer 1        5x5 Conv       32           0.9         10% of neurons  
- Layer 2        5x5 Conv       64           0.8         20% of neurons
- Layer 3        5x5 Conv       128          0.7         30% of neurons
- Layer 4        FC             1024         0.5         50% of neurons
+1. Download the data set. The classroom has a link to the data set in the "Project Instructions" content. This is a pickled dataset in which we've already resized the images to 32x32. It contains a training, validation and test set.
+2. Clone the project, which contains the Ipython notebook and the writeup template.
+```sh
+git clone https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project
+cd CarND-Traffic-Sign-Classifier-Project
+jupyter notebook Traffic_Sign_Classifier.ipynb
 ```
 
-* **L2 Regularization**. I ended up using **lambda = 0.0001** which seemed to perform best. Important point here is that L2 loss should only include weights of the fully connected layers, and normally it doesn't include bias term. Intuition behind it being that bias term is not contributing to overfitting, as it is not adding any new degree of freedom to a model. 
-
-* **Early stopping**. I use early stopping with a patience of **100 epochs** to capture the last best-performing weights and roll back when model starts overfitting training data. I use validation set cross entropy loss as an early stopping metric, intuition behind using it instead of accuracy is that if your model is *confident* about its predictions it should generalize better.
-
-## Training
-
-I have generated two datasets for training my model using augmentation pipeline I mentioned earlier:
-
-* **Extended** dataset. This dataset simply contains **20x more data** than the original one — e.g. for each training example we generate 19 additional examples by jittering original image, with **augmentation intensity = 0.75**. 
-* **Balanced** dataset. This dataset is balanced across classes and has **20.000 examples** for each class. These 20k contain original training dataset, as well as jittered images from the original training set (with **augmentation intensity = 0.75**) to complete number of examples for each class to 20.000 images.
-
-**Disclaimer:** Training on **extended** dataset may not be the best idea, as some classes remain significantly less represented than the others there. Training a model with this dataset would make it biased towards predicting overrepresented classes. However, in our case we are trying to score highest accuracy on supplied test dataset, which (probably) follows the same classes distribution. So we are going to _cheat_ a bit and use this extended dataset for pre-training — this has proven to make test set accuracy higher (although hardly makes a model perform better "in the field"!).
-
-I then use 25% of these augmented datasets for validation while training in 2 stages:
-
-* **Stage 1: Pre-training**. On the first stage I pre-train the model using **extended** training dataset with TensorFlow `AdamOptimizer` and learning rate set to **0.001**. It normally stops improving after ~180 epochs, which takes ~3.5 hours on my machine equipped with Nvidia GTX1080 GPU.
-* **Stage 2: Fine-tuning**. I then train the model using a **balanced** dataset with a decreased learning rate of **0.0001**.
-
-These two training stages could easily get you past 99% accuracy on the test set. You can, however, improve model performance even further by re-generating **balanced** dataset with slightly decreased augmentation intensity and repeating 2nd fine-tuning stage a couple of times.
-
-## Results
-
-After a couple of fine-tuning training iterations this model scored **99.33% accuracy on the test set**, which is not too bad. As there was a total of 12,630 images that we used for testing, apparently there are **85 examples** that the model could not classify correctly.
-
-Signs on most of those images either have artefacts like shadows or obstructing objects. There are, however, a couple of signs that were simply underrepresented in the training set — training solely on balanced datasets could potentially eliminate this issue, and using some sort of color information could definitely help as well.
-
-In conclusion, according to different sources human performance on a similar task varies from 98.3% to 98.8%, therefore this model seems to outperform an average human. Which, I believe, is the ultimate goal of machine learning!
-
+### Requirements for Submission
+Follow the instructions in the `Traffic_Sign_Classifier.ipynb` notebook and write the project report using the writeup template as a guide, `writeup_template.md`. Submit the project code and writeup document.

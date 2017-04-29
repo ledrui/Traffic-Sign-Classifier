@@ -26,7 +26,7 @@ The goals / steps of this project are the following:
 [image8]: ./examples/placeholder.png "Traffic Sign 5"
 
 
-Here is a link to my [project code](https://github.com/ledrui/Traffic-Sign-Classifier/Traffic_Sign_Classifier.ipynb)
+Here is a link to my [project code](https://github.com/ledrui/Traffic-Sign-Classifier/blob/master/Traffic_Sign_Classifier.ipynb)
 
 ### Data Set Summary & Exploration
 
@@ -104,14 +104,14 @@ My final model consisted of the following layers
 
 #### 3. Describe how you trained your model.
 
-The model was trained with the Adam optimizer, batch size = 128 images, initial learning rate was 0.0005 with decrease by 20% every 5 epochs. The model was trained for 20 epochs (102400 images in each epoch) with one dataset. The model stopped improving after 10 epochs.
+The model was trained with the Adam optimizer, batch size = 128 images, initial learning rate was 0.0005 with decrease by 20% every 5 epochs. The model was trained for 20 epochs (102400 images in each epoch). The model stopped improving after 10 epochs.
 
 Variables were initialized with tensorflow using of a truncated normal distribution with mu = 0.0 and sigma = 0.1. Learning rate was finetuned by try and error process.
 
 Traffic sign classes were coded into one-hot encodings.
 
-Detailed training log can be found in the train_log_f2.csv and train_log_f.csv files (it includes minibatch loss and accuracy)
-Training was performed on a custom built GTX 1070 GPU and it takes about one hour.
+Detailed training log can be found in the t_log.csv and t_log_2.csv files (it includes minibatch loss and accuracy)
+Training was performed on a custom built GTX 1070 GPU for about 45 minutes. The tensorflow implementation of the GoogLenet was inspired from the incredible work of [Nikolas](https://github.com/NikolasEnt)
 
 
 ####4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93.
